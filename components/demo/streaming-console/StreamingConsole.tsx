@@ -6,16 +6,18 @@ import React, { useState, useEffect } from 'react';
 import { useLiveAPIContext } from '../../../contexts/LiveAPIContext';
 import { AudioRecorder } from '../../../lib/audio-recorder';
 import { Modality } from '@google/genai';
+import AudioOrb from './AudioOrb';
 
 interface LiveSessionScreenProps {
   onEndSession: () => void;
 }
 
 const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession }) => {
-  const { client, connected, connect, disconnect, setConfig } = useLiveAPIContext();
+  const { client, connected, connect, disconnect, setConfig, volume } = useLiveAPIContext();
   const [audioRecorder] = useState(() => new AudioRecorder());
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(false);
+  const [inputVolume, setInputVolume] = useState(0);
 
   // Set initial config for the Live API
   useEffect(() => {
@@ -53,15 +55,21 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession }) =
       }
     };
     
+    const onVolume = (vol: number) => {
+      setInputVolume(vol);
+    };
+
     if (connected && !isMuted) {
       audioRecorder.start();
       audioRecorder.on('data', onData);
+      audioRecorder.on('volume', onVolume);
     } else {
       audioRecorder.stop();
     }
 
     return () => {
       audioRecorder.off('data', onData);
+      audioRecorder.off('volume', onVolume);
       audioRecorder.stop();
     };
   }, [connected, isMuted, audioRecorder, client]);
@@ -95,8 +103,8 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession }) =
         <div className="satellite-container">
           <span className="material-symbols-outlined satellite">satellite_alt</span>
         </div>
-        <div className="celestial-body-container">
-            <div className="celestial-body moon"></div>
+        <div className="audio-orb-container">
+            <AudioOrb inputVolume={inputVolume} outputVolume={volume} />
         </div>
       </main>
       <footer className="live-footer">
