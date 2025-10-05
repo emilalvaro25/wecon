@@ -1,0 +1,305 @@
+:root {
+  --background-dark: #000000;
+  --background-light: #101116;
+  --text-primary: #EAEAEA;
+  --text-secondary: #9E9E9E;
+  --accent: #FF6B00;
+  --chip-bg: rgba(255, 255, 255, 0.08);
+  --chip-bg-hover: rgba(255, 255, 255, 0.12);
+  --control-bg: #1C1C1E;
+  --end-call-bg: #FF3B30;
+
+  --font-family: 'Google Sans', 'Roboto', sans-serif;
+}
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--background-dark);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root, .App {
+  height: 100%;
+  width: 100%;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+
+/* Starfield Background */
+.App {
+  position: relative;
+  background: #000;
+  background-image:
+    radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+    radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+    radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px),
+    radial-gradient(rgba(255,255,255,.4), rgba(255,255,255,.1) 2px, transparent 30px);
+  background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
+  background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
+  animation: stars 200s linear infinite;
+}
+
+@keyframes stars {
+  from { background-position: 0 0, 40px 60px, 130px 270px, 70px 100px; }
+  to { background-position: -10000px 5000px, -10000px 5000px, -10000px 5000px, -10000px 5000px; }
+}
+
+/* Screen Layouts */
+.home-screen, .live-session-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 16px;
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+/* Home Screen */
+.home-header, .live-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.app-title, .session-name {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.home-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+}
+
+.main-heading {
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.chip-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 350px;
+}
+
+.chip {
+  background-color: var(--chip-bg);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.chip:hover {
+  background-color: var(--chip-bg-hover);
+}
+
+.home-footer {
+  width: 100%;
+  padding-bottom: 16px;
+}
+
+.input-bar {
+  display: flex;
+  align-items: center;
+  background-color: var(--chip-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  padding: 8px 16px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.input-placeholder {
+  flex-grow: 1;
+  text-align: left;
+  color: var(--text-secondary);
+  padding: 0 8px;
+}
+
+.input-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mic-button {
+  background-color: var(--accent);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.visualizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 24px;
+}
+
+.visualizer span {
+  width: 3px;
+  background-color: var(--text-secondary);
+  animation: quiet 1s ease-in-out infinite;
+}
+
+.visualizer span:nth-child(1) { height: 8px; animation-delay: 0.2s; }
+.visualizer span:nth-child(2) { height: 16px; animation-delay: 0s; }
+.visualizer span:nth-child(3) { height: 12px; animation-delay: 0.4s; }
+
+@keyframes quiet {
+  50% { transform: scaleY(0.5); }
+}
+
+
+/* Live Session Screen */
+.live-main {
+  flex-grow: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.satellite-container {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  animation: orbit 30s linear infinite;
+}
+
+.satellite {
+  font-size: 40px;
+  opacity: 0.7;
+  transform: rotate(-45deg);
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(30px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
+}
+
+.celestial-body-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.celestial-body.moon {
+  width: clamp(200px, 60vw, 400px);
+  aspect-ratio: 1 / 1;
+  background: radial-gradient(circle at 30% 30%, #f4f4f4, #b0b0b0 60%, #505050);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 80px rgba(173, 216, 230, 0.4),
+    inset -25px -25px 40px rgba(0,0,0,0.5);
+}
+
+.live-footer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-bottom: 16px;
+}
+
+.control-bar {
+  display: flex;
+  gap: 16px;
+  background-color: var(--control-bg);
+  padding: 12px 24px;
+  border-radius: 32px;
+}
+
+.control-button {
+  background-color: rgba(255, 255, 255, 0.15);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.control-button:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.control-button.end-call {
+  background-color: var(--end-call-bg);
+}
+.control-button.end-call:hover {
+  opacity: 0.9;
+}
