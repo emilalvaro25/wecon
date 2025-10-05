@@ -105,4 +105,38 @@ values (1, 'gemini-2.5-flash-native-audio-preview-09-2025', 'Zephyr')
 on conflict (id) do nothing;
 
 ```
-```
+---
+
+## Google Authentication Setup (Required for Sign in with Google)
+
+To enable users to sign in with their Google accounts, you need to configure the Google Auth Provider in your Supabase project.
+
+1.  **Navigate to Authentication Providers:**
+    *   In your Supabase project dashboard, go to **Authentication** in the left sidebar.
+    *   Select the **Providers** tab.
+
+2.  **Enable the Google Provider:**
+    *   Find **Google** in the list of providers and click on it to open the configuration panel.
+    *   Toggle the **Enable Google** switch to turn it on.
+
+3.  **Add Your Credentials:**
+    *   You will see fields for `Client ID` and `Client Secret`. Copy and paste the credentials you obtained from the Google Cloud Console into these fields.
+    *   **Client ID:** `73350400049-rkdom6vkoo3ou8km5sgb043e6foj9o9o.apps.googleusercontent.com`
+    *   **Client Secret:** `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`
+
+4.  **Configure Authorized Redirect URI:**
+    *   In your Google Cloud Console's OAuth 2.0 Client ID settings, make sure you have added the following URL to the **Authorized redirect URIs**:
+    *   `https://ockscvdpcdblgnfvociq.supabase.co/auth/v1/callback`
+
+5.  **Add Required Scopes for Function Calling:**
+    *   To allow the application to access Google APIs (like Calendar and Gmail) for function calling in the future, you need to request specific permissions (scopes) from the user during sign-in.
+    *   In the Supabase Google provider configuration, find the **Scopes** field.
+    *   Add the following scopes, separated by a space:
+        ```
+        https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.send
+        ```
+    *   This will ensure that when a user signs in with Google, your application receives the necessary permissions to act on their behalf for creating calendar events and sending emails.
+
+6.  **Save your configuration.**
+
+After completing these steps, the "Sign in with Google" button in the application will work correctly.
