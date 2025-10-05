@@ -2,22 +2,29 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLiveAPIContext } from '../../../contexts/LiveAPIContext';
 import { AudioRecorder } from '../../../lib/audio-recorder';
 import { Modality } from '@google/genai';
 import AudioOrb from './AudioOrb';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '../../../lib/supabaseClient';
 
 interface LiveSessionScreenProps {
   onEndSession: () => void;
+  session: Session;
 }
 
-const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession }) => {
+const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, session }) => {
   const { client, connected, connect, disconnect, setConfig, volume } = useLiveAPIContext();
   const [audioRecorder] = useState(() => new AudioRecorder());
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [inputVolume, setInputVolume] = useState(0);
+
+  const conversationIdRef = useRef<string | null>(null);
+  const currentUserTurnRef = useRef('');
+  const currentAgentTurnRef = useRef('');
 
   // Set initial config for the Live API
   useEffect(() => {
@@ -35,12 +42,73 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession }) =
     });
   }, [setConfig]);
 
-  // Automatically connect when the component mounts
+  // Automatically connect and set up conversation logging
   useEffect(() => {
-    if (!connected) {
-      connect();
-    }
-  }, [connected, connect]);
+    const setupConversation = async () => {
+      // Create a new conversation record in Supabase
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert({ user_id: session.user.id })
+        .select('id')
+        .single();
+      
+      if (error) {
+        console.error('Error creating conversation:', error);
+      } else if (data) {
+        conversationIdRef.current = data.id;
+      }
+
+      if (!connected) {
+        connect();
+      }
+    };
+
+    setupConversation();
+
+    // Event listeners for transcription
+    const handleInput = (text: string) => {
+      currentUserTurnRef.current += text;
+    };
+    const handleOutput = (text: string) => {
+      currentAgentTurnRef.current += text;
+    };
+    const handleTurnComplete = async () => {
+      if (!conversationIdRef.current) return;
+
+      const userTurn = currentUserTurnRef.current.trim();
+      const agentTurn = currentAgentTurnRef.current.trim();
+
+      const turnsToInsert = [];
+      if (userTurn) {
+        turnsToInsert.push({ conversation_id: conversationIdRef.current, actor: 'user', content: userTurn });
+      }
+      if (agentTurn) {
+        turnsToInsert.push({ conversation_id: conversationIdRef.current, actor: 'agent', content: agentTurn });
+      }
+
+      if (turnsToInsert.length > 0) {
+        const { error } = await supabase.from('turns').insert(turnsToInsert);
+        if (error) {
+          console.error('Error saving turns:', error);
+        }
+      }
+      
+      // Reset for next turn
+      currentUserTurnRef.current = '';
+      currentAgentTurnRef.current = '';
+    };
+
+    client.on('inputTranscription', handleInput);
+    client.on('outputTranscription', handleOutput);
+    client.on('turncomplete', handleTurnComplete);
+
+    return () => {
+      client.off('inputTranscription', handleInput);
+      client.off('outputTranscription', handleOutput);
+      client.off('turncomplete', handleTurnComplete);
+    };
+
+  }, [connected, connect, client, session.user.id]);
 
   // Manage audio recording based on connection and mute state
   useEffect(() => {

@@ -17,14 +17,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import cn from 'classnames';
 import ErrorScreen from './components/demo/ErrorScreen';
 import LiveSessionScreen from './components/demo/streaming-console/StreamingConsole';
 import HomeScreen from './components/demo/welcome-screen/WelcomeScreen';
 import { LiveAPIProvider } from './contexts/LiveAPIContext';
 import Sidebar from './components/Sidebar';
-import { useUI } from './lib/state';
+import { useUI, useSettings } from './lib/state';
+import { supabase } from './lib/supabaseClient';
+import { Session } from '@supabase/supabase-js';
+import Auth from './components/auth/Auth';
 
 const API_KEY = process.env.API_KEY as string;
 if (typeof API_KEY !== 'string') {
@@ -39,7 +42,35 @@ if (typeof API_KEY !== 'string') {
  */
 function App() {
   const [screen, setScreen] = useState<'home' | 'live'>('home');
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   const { isSidebarOpen } = useUI();
+  const { loadInitialSettings } = useSettings();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('system_prompt, voice')
+          .eq('user_id', session.user.id)
+          .single();
+        if (data) {
+          loadInitialSettings(data.system_prompt, data.voice);
+        }
+      }
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [loadInitialSettings]);
 
   const startSession = async () => {
     try {
@@ -53,18 +84,32 @@ function App() {
   };
   const endSession = () => setScreen('home');
 
-  return (
-    <div className={cn('App', { 'sidebar-is-open': isSidebarOpen })}>
-      <LiveAPIProvider apiKey={API_KEY}>
-        <ErrorScreen />
-        <Sidebar />
+  const renderContent = () => {
+    if (loading) {
+      return <div className="loading-screen">Loading...</div>;
+    }
+    if (!session) {
+      return <Auth />;
+    }
+    return (
+      <>
+        <Sidebar session={session} />
         <main className="main-content">
           {screen === 'home' ? (
             <HomeScreen onStartSession={startSession} />
           ) : (
-            <LiveSessionScreen onEndSession={endSession} />
+            <LiveSessionScreen session={session} onEndSession={endSession} />
           )}
         </main>
+      </>
+    );
+  };
+
+  return (
+    <div className={cn('App', { 'sidebar-is-open': isSidebarOpen })}>
+      <LiveAPIProvider apiKey={API_KEY}>
+        <ErrorScreen />
+        {renderContent()}
       </LiveAPIProvider>
     </div>
   );

@@ -6,6 +6,8 @@ import { create } from 'zustand';
 import { DEFAULT_LIVE_API_MODEL, DEFAULT_VOICE } from './constants';
 import { FunctionResponseScheduling } from '@google/genai';
 import { AVAILABLE_TOOLS } from './tools';
+import { supabase } from './supabaseClient';
+import { debounce } from 'lodash';
 
 // FIX: Add missing FunctionCall type definition.
 /**
@@ -31,6 +33,12 @@ export const useUI = create<{
   toggleSidebar: () => set(state => ({ isSidebarOpen: !state.isSidebarOpen })),
 }));
 
+// Debounced function to update profile settings in Supabase
+const debouncedUpdateProfile = debounce(async (userId: string, settings: { system_prompt?: string, voice?: string }) => {
+  await supabase.from('profiles').upsert({ user_id: userId, ...settings });
+}, 1000); // 1-second debounce delay
+
+
 /**
  * Settings
  */
@@ -39,17 +47,29 @@ export const useSettings = create<{
   systemPrompt: string;
   model: string;
   voice: string;
-  setSystemPrompt: (prompt: string) => void;
+  loadInitialSettings: (prompt: string, voice: string) => void;
+  setSystemPrompt: (prompt: string, userId: string) => void;
   setModel: (model: string) => void;
-  setVoice: (voice: string) => void;
+  setVoice: (voice: string, userId: string) => void;
 }>(set => ({
   systemPrompt:
     'You are a friendly and helpful customer support agent for an e-commerce company that sells electronics.',
   model: DEFAULT_LIVE_API_MODEL,
   voice: DEFAULT_VOICE,
-  setSystemPrompt: systemPrompt => set({ systemPrompt }),
+  loadInitialSettings: (systemPrompt, voice) => {
+    if (systemPrompt && voice) {
+      set({ systemPrompt, voice });
+    }
+  },
+  setSystemPrompt: (systemPrompt, userId) => {
+    set({ systemPrompt });
+    debouncedUpdateProfile(userId, { system_prompt: systemPrompt });
+  },
   setModel: model => set({ model }),
-  setVoice: voice => set({ voice }),
+  setVoice: (voice, userId) => {
+    set({ voice });
+    debouncedUpdateProfile(userId, { voice });
+  },
 }));
 
 // FIX: Add missing useTools store.
