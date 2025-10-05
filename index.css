@@ -434,6 +434,29 @@ body {
   padding-right: 30px;
 }
 
+.save-settings-button {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  margin-top: 8px; /* Add some space above */
+}
+
+.save-settings-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.save-settings-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
 .sidebar-section-title {
   font-size: 16px;
   font-weight: 500;
@@ -856,6 +879,58 @@ body {
 
 .signout-button:hover {
   background-color: var(--chip-bg-hover);
+}
+
+/* Live Session Error Screen */
+.live-session-screen-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  padding: 24px;
+  text-align: center;
+}
+
+.live-session-screen-error .error-content {
+  background-color: var(--background-light);
+  padding: 40px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.live-session-screen-error .error-icon-large {
+  font-size: 48px;
+  color: var(--end-call-bg);
+}
+
+.live-session-screen-error h2 {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.live-session-screen-error p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 90%;
+}
+
+.live-session-screen-error .control-button {
+  margin-top: 16px;
+  background-color: var(--chip-bg);
+  width: auto;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 /* Responsive adjustments */

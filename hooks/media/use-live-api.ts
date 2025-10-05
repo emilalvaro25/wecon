@@ -28,13 +28,9 @@ import { useSettings } from '../../lib/state';
 
 export type UseLiveApiResults = {
   client: GenAILiveClient;
-  setConfig: (config: LiveConnectConfig) => void;
-  config: LiveConnectConfig;
-
-  connect: () => Promise<void>;
+  connect: (config: LiveConnectConfig) => Promise<void>;
   disconnect: () => void;
   connected: boolean;
-
   volume: number;
 };
 
@@ -50,7 +46,6 @@ export function useLiveApi({
 
   const [volume, setVolume] = useState(0);
   const [connected, setConnected] = useState(false);
-  const [config, setConfig] = useState<LiveConnectConfig>({});
 
   // register audio for streaming server -> speakers
   useEffect(() => {
@@ -125,13 +120,13 @@ export function useLiveApi({
     };
   }, [client]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (config: LiveConnectConfig) => {
     if (!config) {
-      throw new Error('config has not been set');
+      throw new Error('A config must be provided to connect.');
     }
     client.disconnect();
     await client.connect(config);
-  }, [client, config]);
+  }, [client]);
 
   const disconnect = useCallback(async () => {
     client.disconnect();
@@ -140,8 +135,6 @@ export function useLiveApi({
 
   return {
     client,
-    config,
-    setConfig,
     connect,
     connected,
     disconnect,

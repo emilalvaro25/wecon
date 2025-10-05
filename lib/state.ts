@@ -33,25 +33,19 @@ export const useUI = create<{
   toggleSidebar: () => set(state => ({ isSidebarOpen: !state.isSidebarOpen })),
 }));
 
-// Debounced function to update profile settings in Supabase
-const debouncedUpdateProfile = debounce(async (userId: string, settings: { system_prompt?: string, voice?: string }) => {
-  await supabase.from('profiles').upsert({ user_id: userId, ...settings });
-}, 1000); // 1-second debounce delay
-
-
 /**
  * Settings
  */
 export const useSettings = create<{
-  // FIX: Add missing systemPrompt and setSystemPrompt.
   systemPrompt: string;
   model: string;
   voice: string;
   loadInitialSettings: (prompt: string, voice: string) => void;
-  setSystemPrompt: (prompt: string, userId: string) => void;
+  setSystemPrompt: (prompt: string) => void;
   setModel: (model: string) => void;
-  setVoice: (voice: string, userId: string) => void;
-}>(set => ({
+  setVoice: (voice: string) => void;
+  saveSettings: (userId: string) => Promise<void>;
+}>((set, get) => ({
   systemPrompt:
     'You are a friendly and helpful customer support agent for an e-commerce company that sells electronics.',
   model: DEFAULT_LIVE_API_MODEL,
@@ -61,16 +55,53 @@ export const useSettings = create<{
       set({ systemPrompt, voice });
     }
   },
-  setSystemPrompt: (systemPrompt, userId) => {
+  setSystemPrompt: (systemPrompt) => {
     set({ systemPrompt });
-    debouncedUpdateProfile(userId, { system_prompt: systemPrompt });
   },
   setModel: model => set({ model }),
-  setVoice: (voice, userId) => {
+  setVoice: (voice) => {
     set({ voice });
-    debouncedUpdateProfile(userId, { voice });
+  },
+  saveSettings: async (userId: string) => {
+    const { systemPrompt, voice } = get();
+    // Use `select` and `update` or `insert` to ensure a profile exists.
+    // This is safer than relying on `upsert` when RLS is enabled without a specific `upsert` policy.
+    const { data, error: selectError } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('user_id', userId)
+      .single();
+
+    if (selectError && selectError.code !== 'PGRST116') { // PGRST116: "No rows found"
+      console.error("Error checking for profile:", selectError);
+      throw selectError;
+    }
+    
+    const settings = { user_id: userId, system_prompt: systemPrompt, voice: voice };
+
+    if (data) {
+      // Profile exists, update it
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ system_prompt: systemPrompt, voice: voice })
+        .eq('user_id', userId);
+      if (updateError) {
+        console.error("Error updating settings:", updateError);
+        throw updateError;
+      }
+    } else {
+      // Profile does not exist, insert it
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert(settings);
+      if (insertError) {
+        console.error("Error inserting settings:", insertError);
+        throw insertError;
+      }
+    }
   },
 }));
+
 
 // FIX: Add missing useTools store.
 /**

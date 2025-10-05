@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import cn from 'classnames';
 import ErrorScreen from './components/demo/ErrorScreen';
 import LiveSessionScreen from './components/demo/streaming-console/StreamingConsole';
@@ -72,7 +72,7 @@ function App() {
     return () => subscription.unsubscribe();
   }, [loadInitialSettings]);
 
-  const startSession = async () => {
+  const startSession = useCallback(async () => {
     try {
       // Check for microphone permissions before starting
       await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -81,8 +81,9 @@ function App() {
       console.error("Microphone permission denied:", err);
       alert("Please enable microphone access to start a session.");
     }
-  };
-  const endSession = () => setScreen('home');
+  }, []);
+
+  const endSession = useCallback(() => setScreen('home'), []);
 
   const renderContent = () => {
     if (loading) {

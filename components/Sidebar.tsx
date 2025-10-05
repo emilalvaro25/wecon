@@ -8,6 +8,8 @@ import { AVAILABLE_VOICES } from '../lib/constants';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
 import { supabase } from '../lib/supabaseClient';
 import { Session } from '@supabase/supabase-js';
+// FIX: Import React to resolve namespace issue with React.ChangeEvent.
+import React, { useState } from 'react';
 
 interface SidebarProps {
   session: Session;
@@ -15,13 +17,33 @@ interface SidebarProps {
 
 export default function Sidebar({ session }: SidebarProps) {
   const { isSidebarOpen, toggleSidebar } = useUI();
-  const { systemPrompt, voice, setSystemPrompt, setVoice } =
+  const { systemPrompt, voice, setSystemPrompt, setVoice, saveSettings } =
     useSettings();
   const { connected } = useLiveAPIContext();
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
+  
+  const handleSave = async () => {
+    setSaveState('saving');
+    try {
+      await saveSettings(session.user.id);
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 2000); // Reset after 2s
+    } catch (error) {
+      setSaveState('error');
+      setTimeout(() => setSaveState('idle'), 2000); // Reset after 2s
+    }
+  };
+
+  const handleSettingChange = (setter: (value: string) => void) => (e: React.ChangeEvent<HTMLTextAreaElement | HTMLSelectElement>) => {
+    setter(e.target.value);
+    setSaveState('idle'); // Reset save state if user makes a new change
+  };
+
 
   return (
     <>
@@ -39,14 +61,14 @@ export default function Sidebar({ session }: SidebarProps) {
                 System Prompt
                 <textarea
                   value={systemPrompt}
-                  onChange={e => setSystemPrompt(e.target.value, session.user.id)}
+                  onChange={handleSettingChange(setSystemPrompt)}
                   rows={10}
                   placeholder="Describe the role and personality of the AI..."
                 />
               </label>
               <label>
                 Voice
-                <select value={voice} onChange={e => setVoice(e.target.value, session.user.id)}>
+                <select value={voice} onChange={handleSettingChange(setVoice)}>
                   {AVAILABLE_VOICES.map(v => (
                     <option key={v} value={v}>
                       {v}
@@ -54,6 +76,9 @@ export default function Sidebar({ session }: SidebarProps) {
                   ))}
                 </select>
               </label>
+              <button onClick={handleSave} className="save-settings-button" disabled={saveState === 'saving' || connected}>
+                {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved!' : saveState === 'error' ? 'Error!' : 'Save Settings'}
+              </button>
             </fieldset>
           </div>
         </div>
