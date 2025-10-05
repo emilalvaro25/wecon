@@ -8,6 +8,8 @@
   --chip-bg-hover: rgba(255, 255, 255, 0.12);
   --control-bg: #1C1C1E;
   --end-call-bg: #FF3B30;
+  --user-audio-color: #4a8df8;
+  --agent-audio-color: var(--accent);
 
   --font-family: 'Google Sans', 'Roboto', sans-serif;
 }
@@ -169,7 +171,7 @@ body {
 
 .home-footer {
   width: 100%;
-  padding-bottom: 16px;
+  padding-bottom: 36px;
 }
 
 .input-bar {
@@ -264,75 +266,43 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.audio-orb {
-  width: clamp(200px, 60vw, 400px);
-  aspect-ratio: 1 / 1;
+  width: clamp(250px, 70vw, 450px);
+  height: clamp(250px, 70vw, 450px);
   position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
-.audio-orb-surface {
+.pluto-orb-surface {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fde6d3, #a77e5a 80%);
+  box-shadow: 
+    inset 0 0 50px rgba(0,0,0,0.5),
+    0 0 20px rgba(0,0,0,0.3);
+  position: relative;
+  transform: scale(var(--volume-scale, 1));
+  transition: transform 150ms ease-out;
+}
+
+.pluto-orb-glow {
+  position: absolute;
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background-color: #7d5e4b;
-  /* Pluto-like texture */
-  background-image: 
-    radial-gradient(circle at 25% 30%, #f0e6d6 5%, transparent 40%), 
-    radial-gradient(circle at 70% 65%, #a48a79 10%, transparent 30%);
-  box-shadow: 
-    0 0 80px rgba(173, 216, 230, 0.4),
-    inset -25px -25px 40px rgba(0,0,0,0.5);
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-}
-
-.visualizer-wrapper {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.visualizer-bar-container {
-  position: absolute;
-  bottom: 50%;
-  left: 50%;
-  width: 3px;
-  transform-origin: bottom center;
-  margin-left: -1.5px;
-}
-
-.visualizer-bar {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  border-radius: 2px;
-  transition: height 50ms ease-out;
-}
-
-.output-bar {
-  background-color: var(--accent);
-  box-shadow: 0 0 5px var(--accent);
-}
-
-.input-bar {
-  background-color: #3B82F6; /* A nice blue */
-  box-shadow: 0 0 5px #3B82F6;
+  background: var(--glow-color, transparent);
+  filter: blur(50px);
+  transform: scale(var(--volume-scale, 1));
+  opacity: var(--glow-opacity, 0);
+  transition: transform 150ms ease-out, opacity 150ms ease-out;
+  will-change: transform, opacity;
 }
 
 .live-footer {
   display: flex;
   justify-content: center;
   width: 100%;
-  padding-bottom: 16px;
+  padding-bottom: 36px;
 }
 
 .control-bar {
@@ -746,6 +716,24 @@ body {
 }
 
 /* Responsive adjustments */
+@media (max-width: 767px) {
+  .sidebar {
+    width: 100%;
+    height: 100%;
+    transform: translateY(-100%);
+    border-right: none;
+    background: var(--background-dark);
+  }
+
+  .sidebar.open {
+    transform: translateY(0);
+  }
+
+  .sidebar-content {
+    justify-content: center;
+  }
+}
+
 @media (min-width: 768px) {
   .App.sidebar-is-open .main-content {
     margin-left: 320px;
@@ -771,7 +759,8 @@ body {
     padding: 12px 24px;
   }
   
-  .audio-orb {
+  .audio-orb-container {
     width: clamp(300px, 40vw, 500px);
+    height: clamp(300px, 40vw, 500px);
   }
 }
