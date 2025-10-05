@@ -2,10 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { FunctionCall, useSettings, useUI, useTools } from '@/lib/state';
+import { FunctionCall, useSettings, useUI, useTools } from '../lib/state';
 import c from 'classnames';
-import { DEFAULT_LIVE_API_MODEL, AVAILABLE_VOICES } from '@/lib/constants';
-import { useLiveAPIContext } from '@/contexts/LiveAPIContext';
+import { DEFAULT_LIVE_API_MODEL, AVAILABLE_VOICES } from '../lib/constants';
+import { useLiveAPIContext } from '../contexts/LiveAPIContext';
 import { useState } from 'react';
 import ToolEditorModal from './ToolEditorModal';
 

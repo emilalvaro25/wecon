@@ -22,6 +22,7 @@ import ErrorScreen from './components/demo/ErrorScreen';
 import LiveSessionScreen from './components/demo/streaming-console/StreamingConsole';
 import HomeScreen from './components/demo/welcome-screen/WelcomeScreen';
 import { LiveAPIProvider } from './contexts/LiveAPIContext';
+import Sidebar from './components/Sidebar';
 
 const API_KEY = process.env.API_KEY as string;
 if (typeof API_KEY !== 'string') {
@@ -53,6 +54,7 @@ function App() {
     <div className="App">
       <LiveAPIProvider apiKey={API_KEY}>
         <ErrorScreen />
+        <Sidebar />
         {screen === 'home' ? (
           <HomeScreen onStartSession={startSession} />
         ) : (

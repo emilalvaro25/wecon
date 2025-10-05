@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { useUI } from '@/lib/state';
+import { useUI } from '../lib/state';
 
 export default function Header() {
   const { toggleSidebar } = useUI();

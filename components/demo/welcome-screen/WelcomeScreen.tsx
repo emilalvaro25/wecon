@@ -3,16 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React from 'react';
+import { useUI } from '../../../lib/state';
 
 interface HomeScreenProps {
   onStartSession: () => void;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ onStartSession }) => {
+  const { toggleSidebar } = useUI();
+
   return (
     <div className="home-screen">
       <header className="home-header">
-        <button className="icon-button" aria-label="Menu"><span className="material-symbols-outlined">menu</span></button>
+        <button className="icon-button" aria-label="Menu" onClick={toggleSidebar}><span className="material-symbols-outlined">menu</span></button>
         <h1 className="app-title">Kithai AI</h1>
         <div className="header-actions">
           <button className="icon-button" aria-label="Captions"><span className="material-symbols-outlined">closed_caption</span></button>

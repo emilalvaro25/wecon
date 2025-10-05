@@ -24,7 +24,7 @@ import { LiveConnectConfig, Modality, LiveServerToolCall } from '@google/genai';
 import { AudioStreamer } from '../../lib/audio-streamer';
 import { audioContext } from '../../lib/utils';
 import VolMeterWorket from '../../lib/worklets/vol-meter';
-import { useSettings } from '@/lib/state';
+import { useSettings } from '../../lib/state';
 
 export type UseLiveApiResults = {
   client: GenAILiveClient;
