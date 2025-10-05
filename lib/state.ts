@@ -44,7 +44,7 @@ export const useSettings = create<{
   setSystemPrompt: (prompt: string) => void;
   setModel: (model: string) => void;
   setVoice: (voice: string) => void;
-  saveSettings: (userId: string) => Promise<void>;
+  saveSettings: (userEmail: string) => Promise<void>;
 }>((set, get) => ({
   systemPrompt:
     'You are a friendly and helpful customer support agent for an e-commerce company that sells electronics.',
@@ -62,42 +62,20 @@ export const useSettings = create<{
   setVoice: (voice) => {
     set({ voice });
   },
-  saveSettings: async (userId: string) => {
+  saveSettings: async (userEmail: string) => {
     const { systemPrompt, voice } = get();
-    // Use `select` and `update` or `insert` to ensure a profile exists.
-    // This is safer than relying on `upsert` when RLS is enabled without a specific `upsert` policy.
-    const { data, error: selectError } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('user_id', userId)
-      .single();
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({ 
+        user_email: userEmail, 
+        roles_and_description: systemPrompt, 
+        voice: voice,
+        updated_at: new Date().toISOString()
+      });
 
-    if (selectError && selectError.code !== 'PGRST116') { // PGRST116: "No rows found"
-      console.error("Error checking for profile:", selectError);
-      throw selectError;
-    }
-    
-    const settings = { user_id: userId, system_prompt: systemPrompt, voice: voice };
-
-    if (data) {
-      // Profile exists, update it
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ system_prompt: systemPrompt, voice: voice })
-        .eq('user_id', userId);
-      if (updateError) {
-        console.error("Error updating settings:", updateError);
-        throw updateError;
-      }
-    } else {
-      // Profile does not exist, insert it
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert(settings);
-      if (insertError) {
-        console.error("Error inserting settings:", insertError);
-        throw insertError;
-      }
+    if (error) {
+      console.error("Error saving settings:", error);
+      throw error;
     }
   },
 }));

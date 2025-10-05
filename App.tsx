@@ -50,14 +50,14 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      if (session) {
+      if (session?.user?.email) {
         const { data } = await supabase
-          .from('profiles')
-          .select('system_prompt, voice')
-          .eq('user_id', session.user.id)
+          .from('user_settings')
+          .select('roles_and_description, voice')
+          .eq('user_email', session.user.email)
           .single();
         if (data) {
-          loadInitialSettings(data.system_prompt, data.voice);
+          loadInitialSettings(data.roles_and_description, data.voice);
         }
       }
       setLoading(false);

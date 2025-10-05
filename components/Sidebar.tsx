@@ -28,9 +28,14 @@ export default function Sidebar({ session }: SidebarProps) {
   };
   
   const handleSave = async () => {
+    if (!session.user.email) {
+      setSaveState('error');
+      console.error("User email is not available to save settings.");
+      return;
+    }
     setSaveState('saving');
     try {
-      await saveSettings(session.user.id);
+      await saveSettings(session.user.email);
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 2000); // Reset after 2s
     } catch (error) {

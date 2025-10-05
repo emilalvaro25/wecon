@@ -23,43 +23,22 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [inputVolume, setInputVolume] = useState(0);
-  const [setupError, setSetupError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
-  const conversationIdRef = useRef<string | null>(null);
   const currentUserTurnRef = useRef('');
   const currentAgentTurnRef = useRef('');
-  const setupInProgress = useRef(false);
+  const connectInProgress = useRef(false);
 
-  // 1. Create conversation in DB and connect to Live API
+  // 1. Connect to Live API
   useEffect(() => {
     const setupAndConnect = async () => {
       // Guard against re-running
-      if (connected || setupInProgress.current) {
+      if (connected || connectInProgress.current) {
         return;
       }
-      setupInProgress.current = true;
+      connectInProgress.current = true;
   
-      // 1. Create conversation in DB
-      const { data, error } = await supabase
-        .from('conversations')
-        .insert({ user_id: session.user.id })
-        .select('id')
-        .single();
-  
-      if (error) {
-        console.error('Error creating conversation:', error.message, error.details);
-        // Check for common "table not found" errors from Supabase
-        if (error.message.includes('Could not find the table') || error.message.includes('relation "public.conversations" does not exist')) {
-          setSetupError("Database setup is incomplete. Please run the setup script in DATABASE_SETUP.md in your Supabase project's SQL Editor to create the necessary tables.");
-        } else {
-          setSetupError(`Failed to start session due to a database error: ${error.message}`);
-        }
-        return; // Stop execution
-      } else if (data) {
-        conversationIdRef.current = data.id;
-      }
-  
-      // 2. Build config and connect to Live API
+      // Build config and connect to Live API
       const liveApiConfig: LiveConnectConfig = {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -77,16 +56,16 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
         await connect(liveApiConfig);
       } catch (e: any) {
         console.error('Failed to connect to Live API:', e);
-        setSetupError(`Failed to connect to the AI service: ${e.message}`);
+        setSessionError(`Failed to connect to the AI service: ${e.message}`);
       }
     };
   
     setupAndConnect();
 
-  }, [connect, connected, session.user.id, voice, onEndSession]);
+  }, [connect, connected, voice]);
 
 
-  // 2. Set up event listeners for transcription
+  // 2. Set up event listeners for transcription and saving turns
   useEffect(() => {
     const handleInput = (text: string) => {
       currentUserTurnRef.current += text;
@@ -95,23 +74,28 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
       currentAgentTurnRef.current += text;
     };
     const handleTurnComplete = async () => {
-      if (!conversationIdRef.current) return;
+      if (!session?.user?.email) return;
 
       const userTurn = currentUserTurnRef.current.trim();
       const agentTurn = currentAgentTurnRef.current.trim();
 
       const turnsToInsert = [];
       if (userTurn) {
-        turnsToInsert.push({ conversation_id: conversationIdRef.current, actor: 'user', content: userTurn });
+        turnsToInsert.push({ user_email: session.user.email, turn_data: { actor: 'user', content: userTurn } });
       }
       if (agentTurn) {
-        turnsToInsert.push({ conversation_id: conversationIdRef.current, actor: 'agent', content: agentTurn });
+        turnsToInsert.push({ user_email: session.user.email, turn_data: { actor: 'agent', content: agentTurn } });
       }
 
       if (turnsToInsert.length > 0) {
-        const { error } = await supabase.from('turns').insert(turnsToInsert);
+        const { error } = await supabase.from('conversation_history').insert(turnsToInsert);
         if (error) {
           console.error('Error saving turns:', error.message, error.details);
+          if (error.message.includes('relation "public.conversation_history" does not exist')) {
+            setSessionError("Failed to save conversation: The database setup is incomplete. Please run the setup script in DATABASE_SETUP.md in your Supabase project's SQL Editor.");
+          } else {
+            setSessionError(`Failed to save conversation due to a database error: ${error.message}`);
+          }
         }
       }
       
@@ -130,7 +114,7 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
       client.off('turncomplete', handleTurnComplete);
     };
 
-  }, [client]);
+  }, [client, session.user.email]);
 
   // 3. Manage audio recording based on connection and mute state
   useEffect(() => {
@@ -179,13 +163,13 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
     setIsCameraOn(prev => !prev);
   }
 
-  if (setupError) {
+  if (sessionError) {
     return (
       <div className="live-session-screen-error">
         <div className="error-content">
           <span className="material-symbols-outlined error-icon-large">error</span>
           <h2>Failed to Start Session</h2>
-          <p>{setupError}</p>
+          <p>{sessionError}</p>
           <button className="control-button" onClick={onEndSession}>Go Back</button>
         </div>
       </div>
