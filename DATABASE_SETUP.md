@@ -17,9 +17,11 @@ This will create all the required tables and security policies for the applicati
 ## SQL Script
 
 ```sql
+-- This script is idempotent and can be run multiple times safely.
+
 -- 1. Create user_settings table
 -- This table stores settings specific to each user, identified by their email.
-create table public.user_settings (
+create table if not exists public.user_settings (
   user_email text not null primary key,
   persona_name text,
   roles_and_description text,
@@ -33,6 +35,7 @@ create table public.user_settings (
 -- RLS Policy for user_settings
 -- Ensures users can only access and modify their own settings.
 alter table public.user_settings enable row level security;
+drop policy if exists "Users can manage their own settings" on public.user_settings;
 create policy "Users can manage their own settings"
   on public.user_settings for all
   using ( auth.jwt() ->> 'email' = user_email )
@@ -40,7 +43,7 @@ create policy "Users can manage their own settings"
 
 -- 2. Create conversation_history table
 -- Stores individual turns from conversations for each user.
-create table public.conversation_history (
+create table if not exists public.conversation_history (
   id bigint generated always as identity primary key,
   user_email text not null,
   turn_data jsonb,
@@ -50,6 +53,7 @@ create table public.conversation_history (
 -- RLS Policy for conversation_history
 -- Ensures users can only manage their own conversation history.
 alter table public.conversation_history enable row level security;
+drop policy if exists "Users can manage their own conversation history" on public.conversation_history;
 create policy "Users can manage their own conversation history"
   on public.conversation_history for all
   using ( auth.jwt() ->> 'email' = user_email )
@@ -57,7 +61,7 @@ create policy "Users can manage their own conversation history"
 
 -- 3. Create memories table
 -- Stores long-term memories or notes for a user.
-create table public.memories (
+create table if not exists public.memories (
   id bigint generated always as identity primary key,
   user_email text not null,
   memory_text text not null,
@@ -67,6 +71,7 @@ create table public.memories (
 -- RLS Policy for memories
 -- Ensures users can only manage their own memories.
 alter table public.memories enable row level security;
+drop policy if exists "Users can manage their own memories" on public.memories;
 create policy "Users can manage their own memories"
   on public.memories for all
   using ( auth.jwt() ->> 'email' = user_email )
@@ -76,7 +81,7 @@ create policy "Users can manage their own memories"
 -- A global table for application-wide settings.
 -- Note: This table is intended for admin use. The policy below makes it read-only for all authenticated users.
 -- You may want to adjust this for your own admin roles.
-create table public.settings (
+create table if not exists public.settings (
   id bigint primary key,
   systemPrompt text,
   model text,
@@ -94,6 +99,7 @@ create table public.settings (
 -- RLS Policy for settings
 -- Allows any authenticated user to read the global settings.
 alter table public.settings enable row level security;
+drop policy if exists "Authenticated users can read global settings" on public.settings;
 create policy "Authenticated users can read global settings"
   on public.settings for select
   using ( auth.role() = 'authenticated' );
@@ -121,21 +127,21 @@ To enable users to sign in with their Google accounts, you need to configure the
 
 3.  **Add Your Credentials:**
     *   You will see fields for `Client ID` and `Client Secret`. Copy and paste the credentials you obtained from the Google Cloud Console into these fields.
-    *   **Client ID:** `73350400049-rkdom6vkoo3ou8km5sgb043e6foj9o9o.apps.googleusercontent.com`
-    *   **Client Secret:** `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`
+    *   **Client ID:** `73350400049-lak1uj65sti1dknrrfh92t43lvti83da.apps.googleusercontent.com`
+    *   **Client Secret:** `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`
 
 4.  **Configure Authorized Redirect URI:**
     *   In your Google Cloud Console's OAuth 2.0 Client ID settings, make sure you have added the following URL to the **Authorized redirect URIs**:
     *   `https://ockscvdpcdblgnfvociq.supabase.co/auth/v1/callback`
 
 5.  **Add Required Scopes for Function Calling:**
-    *   To allow the application to access Google APIs (like Calendar and Gmail) for function calling in the future, you need to request specific permissions (scopes) from the user during sign-in.
-    *   In the Supabase Google provider configuration, find the **Scopes** field.
+    *   To allow the application to access Google APIs (like Calendar, Gmail, Drive, and Sheets) for function calling, you need to request specific permissions (scopes) from the user during sign-in.
+    *   In the Supabase Google provider configuration, find the **Additional Scopes** field.
     *   Add the following scopes, separated by a space:
         ```
-        https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.send
+        https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets
         ```
-    *   This will ensure that when a user signs in with Google, your application receives the necessary permissions to act on their behalf for creating calendar events and sending emails.
+    *   This will ensure that when a user signs in with Google, your application receives the necessary permissions to act on their behalf.
 
 6.  **Save your configuration.**
 

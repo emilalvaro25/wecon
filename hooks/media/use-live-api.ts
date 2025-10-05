@@ -25,6 +25,7 @@ import { AudioStreamer } from '../../lib/audio-streamer';
 import { audioContext } from '../../lib/utils';
 import VolMeterWorket from '../../lib/worklets/vol-meter';
 import { useSettings } from '../../lib/state';
+import { supabase } from '../../lib/supabaseClient';
 
 export type UseLiveApiResults = {
   client: GenAILiveClient;
@@ -93,19 +94,45 @@ export function useLiveApi({
     client.on('interrupted', stopAudioStreamer);
     client.on('audio', onAudio);
 
-    const onToolCall = (toolCall: LiveServerToolCall) => {
+    const onToolCall = async (toolCall: LiveServerToolCall) => {
       const functionResponses: any[] = [];
 
       for (const fc of toolCall.functionCalls) {
-        // Prepare the response
-        functionResponses.push({
-          id: fc.id,
-          name: fc.name,
-          response: { result: 'ok' }, // simple, hard-coded function response
-        });
+        try {
+          // The name of the Supabase Edge Function to invoke.
+          const functionName = 'google-api-proxy';
+          const { data, error } = await supabase.functions.invoke(functionName, {
+            // Pass the tool name and arguments to the server-side function.
+            body: {
+              toolName: fc.name,
+              toolArgs: fc.args,
+            },
+          });
+
+          if (error) throw error;
+
+          // Send the successful result back to the Gemini model.
+          functionResponses.push({
+            id: fc.id,
+            name: fc.name,
+            response: { result: data.result || 'Function executed successfully.' },
+          });
+
+        } catch (err: any) {
+          console.error(`Error calling tool ${fc.name}:`, err);
+          // Send an error message back to the model if the tool call fails.
+          functionResponses.push({
+            id: fc.id,
+            name: fc.name,
+            response: { error: err.message || 'An unknown error occurred.' },
+          });
+        }
       }
 
-      client.sendToolResponse({ functionResponses: functionResponses });
+      // Send all collected responses back to the model.
+      if (functionResponses.length > 0) {
+        client.sendToolResponse({ functionResponses: functionResponses });
+      }
     };
 
     client.on('toolcall', onToolCall);

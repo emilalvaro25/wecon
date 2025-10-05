@@ -9,7 +9,7 @@ import { LiveConnectConfig, Modality } from '@google/genai';
 import AudioOrb from './AudioOrb';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../../../lib/supabaseClient';
-import { useSettings } from '../../../lib/state';
+import { useSettings, useTools } from '../../../lib/state';
 
 interface LiveSessionScreenProps {
   onEndSession: () => void;
@@ -18,7 +18,8 @@ interface LiveSessionScreenProps {
 
 const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, session }) => {
   const { client, connected, connect, disconnect, volume } = useLiveAPIContext();
-  const { voice } = useSettings();
+  const { voice, systemPrompt } = useSettings();
+  const { tools } = useTools();
   const [audioRecorder] = useState(() => new AudioRecorder());
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(false);
@@ -37,9 +38,14 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
         return;
       }
       connectInProgress.current = true;
+
+      // Filter for enabled tools and format for the API
+      const enabledTools = tools.filter(t => t.isEnabled);
+      const functionDeclarations = enabledTools.map(({ isEnabled, ...rest }) => rest);
   
       // Build config and connect to Live API
       const liveApiConfig: LiveConnectConfig = {
+        systemInstruction: systemPrompt,
         responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
@@ -51,6 +57,10 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
         inputAudioTranscription: {},
         outputAudioTranscription: {},
       };
+
+      if (functionDeclarations.length > 0) {
+        liveApiConfig.tools = [{ functionDeclarations }];
+      }
       
       try {
         await connect(liveApiConfig);
@@ -62,7 +72,7 @@ const LiveSessionScreen: React.FC<LiveSessionScreenProps> = ({ onEndSession, ses
   
     setupAndConnect();
 
-  }, [connect, connected, voice]);
+  }, [connect, connected, voice, systemPrompt, tools]);
 
 
   // 2. Set up event listeners for transcription and saving turns

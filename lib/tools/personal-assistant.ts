@@ -79,4 +79,36 @@ export const personalAssistantTools: FunctionCall[] = [
     isEnabled: true,
     scheduling: FunctionResponseScheduling.INTERRUPT,
   },
+  {
+    name: 'create_google_doc',
+    description: 'Creates a new Google Document with a specified title.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        title: {
+          type: 'STRING',
+          description: 'The title of the new document.',
+        },
+      },
+      required: ['title'],
+    },
+    isEnabled: true,
+    scheduling: FunctionResponseScheduling.INTERRUPT,
+  },
+  {
+    name: 'create_google_sheet',
+    description: 'Creates a new Google Sheet with a specified title.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        title: {
+          type: 'STRING',
+          description: 'The title of the new spreadsheet.',
+        },
+      },
+      required: ['title'],
+    },
+    isEnabled: true,
+    scheduling: FunctionResponseScheduling.INTERRUPT,
+  },
 ];
