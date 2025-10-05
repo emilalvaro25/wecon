@@ -18,11 +18,13 @@
  * limitations under the License.
  */
 import React, { useState } from 'react';
+import cn from 'classnames';
 import ErrorScreen from './components/demo/ErrorScreen';
 import LiveSessionScreen from './components/demo/streaming-console/StreamingConsole';
 import HomeScreen from './components/demo/welcome-screen/WelcomeScreen';
 import { LiveAPIProvider } from './contexts/LiveAPIContext';
 import Sidebar from './components/Sidebar';
+import { useUI } from './lib/state';
 
 const API_KEY = process.env.API_KEY as string;
 if (typeof API_KEY !== 'string') {
@@ -37,6 +39,7 @@ if (typeof API_KEY !== 'string') {
  */
 function App() {
   const [screen, setScreen] = useState<'home' | 'live'>('home');
+  const { isSidebarOpen } = useUI();
 
   const startSession = async () => {
     try {
@@ -51,15 +54,17 @@ function App() {
   const endSession = () => setScreen('home');
 
   return (
-    <div className="App">
+    <div className={cn('App', { 'sidebar-is-open': isSidebarOpen })}>
       <LiveAPIProvider apiKey={API_KEY}>
         <ErrorScreen />
         <Sidebar />
-        {screen === 'home' ? (
-          <HomeScreen onStartSession={startSession} />
-        ) : (
-          <LiveSessionScreen onEndSession={endSession} />
-        )}
+        <main className="main-content">
+          {screen === 'home' ? (
+            <HomeScreen onStartSession={startSession} />
+          ) : (
+            <LiveSessionScreen onEndSession={endSession} />
+          )}
+        </main>
       </LiveAPIProvider>
     </div>
   );

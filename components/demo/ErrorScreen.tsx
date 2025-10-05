@@ -41,28 +41,13 @@ export default function ErrorScreen() {
   }
 
   if (!error) {
-    return <div style={{ display: 'none' }} />;
+    return null;
   }
 
   return (
     <div className="error-screen">
-      <div
-        style={{
-          fontSize: 48,
-        }}
-      >
-        💔
-      </div>
-      <div
-        className="error-message-container"
-        style={{
-          fontSize: 22,
-          lineHeight: 1.2,
-          opacity: 0.5,
-        }}
-      >
-        {errorMessage}
-      </div>
+      <div className="error-icon">💔</div>
+      <div className="error-message-container">{errorMessage}</div>
       {tryAgainOption ? (
         <button
           className="close-button"
@@ -74,16 +59,7 @@ export default function ErrorScreen() {
         </button>
       ) : null}
       {rawMessage ? (
-        <div
-          className="error-raw-message-container"
-          style={{
-            fontSize: 15,
-            lineHeight: 1.2,
-            opacity: 0.4,
-          }}
-        >
-          {rawMessage}
-        </div>
+        <pre className="error-raw-message-container">{rawMessage}</pre>
       ) : null}
     </div>
   );
